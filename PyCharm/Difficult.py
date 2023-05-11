@@ -4,6 +4,7 @@
 import json
 import os.path
 import click
+from datetime import date
 
 
 def add_man(students, name, tel, year):
@@ -119,42 +120,59 @@ def load_workers(file_name):
 
 
 
+@click.group()
+@click.pass_context
+def main(ctx):
+    """
+    Главная функция программы.
+    """
+    ctx.ensure_object(dict)
 
-@click.command()
-@click.argument('command')
-@click.argument('filename')
-def main(command, filename):
+@main.command()
+@click.pass_context
+@click.argument('filename', type=click.Path(exists=True))
+@click.option('--name', prompt='Введите ФИО')
+@click.option('--tel', prompt='Введите номер телефона', type=int)
+@click.option('--year', prompt='Введите год')
+def add(ctx, filename, name, tel, year):
     """
-    Главная функция
+    Добавить нового человека.
     """
-    is_dirty = False
     if os.path.exists(filename):
-        students = load_workers(filename)
+        people = load_workers(filename)
     else:
-        students = []
+        people = []
 
-    if command == "add":
-        name = click.prompt("Введите ФИО студета: ")
-        tel = int(click.prompt("Введите номер телефона: "))
-        year = click.prompt("Введите дату: ")
-        students = add_man(
-            students,
-            name,
-            tel,
-            year
-        )
-        is_dirty = True
+    people = add_man(people, name, tel, year)
+    save_workers(filename, people)
 
-    elif command == "list":
-        list_man(students)
 
-    elif command == "select":
-        select_person = click.prompt("Введите имя: ")
-        filter_list = select_man(students, select_person)
-        list_man(filter_list)
+@main.command()
+@click.pass_context
+@click.argument('filename', type=click.Path(exists=True))
+def list(ctx, filename):
+    """
+    Отобразить список лбдей.
+    """
+    if os.path.exists(filename):
+        people = load_workers(filename)
+        list_man(people)
 
-    if is_dirty:
-        save_workers(filename, students)
+
+@main.command()
+@click.pass_context
+@click.argument('filename', type=click.Path(exists=True))
+@click.option('--select', prompt='Введите имя')
+def select(ctx, filename, name):
+    """
+    Выбрать человека.
+    """
+    if os.path.exists(filename):
+        people = load_workers(filename)
+        selected = select_man(people, name)
+        list_man(selected)
+
+
 
 
 if __name__ == '__main__':
